@@ -4,12 +4,17 @@ import plotly.express as px
 import pandas as pd
 import io
 import base64
+import json
+import os
 from dash.dependencies import Input, Output, State
 
 # Initialize Dash app
 app = dash.Dash(__name__, suppress_callback_exceptions=True)
 app.title = "CSV Data Visualization"
 server = app.server
+
+# Define file path for storing processed data
+PROCESSED_DATA_FILE = 'processed_data.json'
 
 # Store uploaded data persistently
 app.layout = html.Div([
@@ -133,7 +138,19 @@ def update_data(contents_list):
     
     df_cleaned = clean_and_merge_data(contents_list)
     processed_data = monthly_breakdown(df_cleaned)
+
+    # Save the processed data to a file
+    with open(PROCESSED_DATA_FILE, 'w') as f:
+        json.dump(processed_data, f)
+
     return processed_data, "✅ Files uploaded & processed!"
+
+# Function to read the processed data from file
+def load_processed_data():
+    if os.path.exists(PROCESSED_DATA_FILE):
+        with open(PROCESSED_DATA_FILE, 'r') as f:
+            return json.load(f)
+    return None
 
 def generate_visuals(df):
     return html.Div([
@@ -148,7 +165,6 @@ def generate_visuals(df):
         dcc.Graph(figure=px.bar(df, x='month', y=['total_revenue', 'new_customer_revenue', 'returning_customer_revenue'], barmode='group')),
     ])
 
-
 # Callback to update the page content
 @app.callback(
     Output('page-content', 'children'),
@@ -156,7 +172,9 @@ def generate_visuals(df):
 )
 def display_page(pathname, stored_data):
     if not stored_data:
-        return "\ud83d\udce4 Upload a file to begin."
+        stored_data = load_processed_data()
+        if not stored_data:
+            return "\ud83d\udce4 Upload a file to begin."
     
     if pathname == '/ltv':
         return html.Div([
