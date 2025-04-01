@@ -19,7 +19,7 @@ PROCESSED_DATA_FILE = 'output_data.json'
 # Store uploaded data persistently
 app.layout = html.Div([
     dcc.Store(id='stored-data', storage_type='local'),  # Stores the cleaned DataFrame
-    dcc.Location(id='url', refresh=False),
+    dcc.Location(id='url', refresh=False),  # URL handling for navigation
 
     html.H1("📂 Upload CSV & Visualize"),
     dcc.Upload(
@@ -158,15 +158,16 @@ def load_processed_data():
             return json.load(f)
     return None
 
+# Generate visual components including data table
 def generate_visuals(df):
     return html.Div([
-        html.H2("\ud83d\udcca Data Table"),
+        html.H2("📊 Data Table"),
         dash_table.DataTable(
             columns=[{"name": col, "id": col} for col in df.columns],
             data=df.round(2).to_dict('records'),
             style_table={'overflowX': 'auto'}
         ),
-        html.H2("\ud83d\udcc8 Monthly Trends"),
+        html.H2("📈 Monthly Trends"),
         dcc.Graph(figure=px.line(df, x='month', y=['new_customers', 'returning_customers'], markers=True)),
         dcc.Graph(figure=px.bar(df, x='month', y=['total_revenue', 'new_customer_revenue', 'returning_customer_revenue'], barmode='group')),
     ])
@@ -180,51 +181,24 @@ def display_page(pathname, stored_data):
     if not stored_data:
         stored_data = load_processed_data()
         if not stored_data:
-            return "\ud83d\udce4 Upload a file to begin."
+            return "📥 Upload a file to begin."
     
     if pathname == '/ltv':
         return html.Div([  # LTV page
-            html.H2("\ud83d\udcc8 LTV Calculations", style={"textAlign": "center", "marginBottom": "30px"}),
+            html.H2("📈 LTV Calculations", style={"textAlign": "center", "marginBottom": "30px"}),
             html.Div([
-                html.Div([
-                    html.Div([
-                        html.H3(f"${stored_data['Basic LTV']:.2f}", style={"fontSize": "36px", "fontWeight": "bold"}),
-                        html.P("Basic LTV", style={"color": "#999", "fontSize": "18px"}),
-                    ], className="card card-basic"),
-                ], className="card-container"),
-                
-                html.Div([
-                    html.Div([
-                        html.H3(f"${stored_data['Advanced LTV']:.2f}", style={"fontSize": "36px", "fontWeight": "bold"}),
-                        html.P("Advanced LTV", style={"color": "#999", "fontSize": "18px"}),
-                    ], className="card card-advanced"),
-                ], className="card-container"),
-                
-                html.Div([
-                    html.Div([
-                        html.H3(f"${stored_data['Average Purchase Value']:.2f}", style={"fontSize": "36px", "fontWeight": "bold"}),
-                        html.P("Average Purchase Value", style={"color": "#999", "fontSize": "18px"}),
-                    ], className="card card-purchase-value"),
-                ], className="card-container"),
-
-                html.Div([
-                    html.Div([
-                        html.H3(f"{stored_data['Average Purchase Frequency']:.2f}", style={"fontSize": "36px", "fontWeight": "bold"}),
-                        html.P("Average Purchase Frequency", style={"color": "#999", "fontSize": "18px"}),
-                    ], className="card card-frequency"),
-                ], className="card-container"),
-
-                html.Div([
-                    html.Div([
-                        html.H3(f"{stored_data['Average Customer LifeSpan (Months)']:.2f}", style={"fontSize": "36px", "fontWeight": "bold"}),
-                        html.P("Average Customer LifeSpan (Months)", style={"color": "#999", "fontSize": "18px"}),
-                    ], className="card card-lifespan"),
-                ], className="card-container"),
-            ], style={"display": "flex", "flexWrap": "wrap", "gap": "20px", "justifyContent": "center"})
+                html.Div([  # Display cards for LTV metrics
+                    html.Div([html.H3(f"${stored_data['Basic LTV']:.2f}"), html.P("Basic LTV")], className="card"),
+                    html.Div([html.H3(f"${stored_data['Advanced LTV']:.2f}"), html.P("Advanced LTV")], className="card"),
+                    html.Div([html.H3(f"${stored_data['Average Purchase Value']:.2f}"), html.P("Avg. Purchase Value")], className="card"),
+                    html.Div([html.H3(f"{stored_data['Average Purchase Frequency']:.2f}"), html.P("Avg. Purchase Frequency")], className="card"),
+                    html.Div([html.H3(f"{stored_data['Average Customer LifeSpan (Months)']:.2f}"), html.P("Avg. Customer Lifespan")], className="card")
+                ], className="dashboard")
+            ])
         ])
     
-    monthly_df = pd.DataFrame(stored_data['monthly_breakdown'])
-    return generate_visuals(monthly_df)
+    # Monthly breakdown page
+    return generate_visuals(pd.DataFrame(stored_data['monthly_breakdown']))
 
 if __name__ == '__main__':
     app.run(debug=True)
