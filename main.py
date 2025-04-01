@@ -18,7 +18,7 @@ PROCESSED_DATA_FILE = 'output_data.json'
 
 # Store uploaded data persistently
 app.layout = html.Div([
-    dcc.Store(id='stored-data', storage_type='local'),  # Stores the cleaned DataFrame
+    dcc.Store(id='stored-data'),  # Stores the cleaned DataFrame
     dcc.Location(id='url', refresh=False),  # URL handling for navigation
 
     html.H1("📂 Upload CSV & Visualize"),
